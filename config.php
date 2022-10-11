@@ -26,7 +26,6 @@ class TeamsPluginConfig extends PluginConfig {
 				$msg = __('Configuration updated successfully');
 			return true;
 		}
-	}
 
     function getOptions() {
         list ($__, $_N) = self::translate();
