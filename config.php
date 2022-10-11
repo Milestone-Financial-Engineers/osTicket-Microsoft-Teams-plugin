@@ -20,13 +20,13 @@ class TeamsPluginConfig extends PluginConfig {
         return Plugin::translate('teams');
     }
 
-    function pre_save($config, &$errors) {
-        if ($config['slack-regex-subject-ignore'] && false === @preg_match("/{$config['slack-regex-subject-ignore']}/i", null)) {
-            $errors['err'] = 'Your regex was invalid, try something like "spam", it will become: "/spam/i" when we use it.';
-            return FALSE;
-        }
-        return TRUE;
-    }
+	function pre_save(&$config, &$errors) {
+			global $msg;
+			if (!$errors)
+				$msg = __('Configuration updated successfully');
+			return true;
+		}
+	}
 
     function getOptions() {
         list ($__, $_N) = self::translate();
