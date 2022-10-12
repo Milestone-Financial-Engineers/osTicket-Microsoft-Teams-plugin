@@ -271,7 +271,7 @@ class teamsPlugin extends Plugin {
                 ]
             ]
         ];
-        if(static::$config['teams-message-display'];) {
+        if(static::$config['teams-message-display']) {
             array_push($message['sections'], ['text' => $ticket->getMessages()[0]->getBody()->getClean()]);
         }
 
