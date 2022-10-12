@@ -21,9 +21,6 @@ class teamsPlugin extends Plugin {
         }
         return self::$instance;
       }
-    declare $config
-    declare $__config
-
     /**
     * static $config;
     * static $__config;
