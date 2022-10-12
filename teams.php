@@ -21,6 +21,9 @@ class teamsPlugin extends Plugin {
         }
         return self::$instance;
       }
+    declare $config
+    declare $__config
+
     /**
     * static $config;
     * static $__config;
@@ -117,13 +120,13 @@ class teamsPlugin extends Plugin {
             error_log("teams plugin called too early.");
             return;
         }
-        $url = static::$config['teams-webhook-url'];
+        $url = $config['teams-webhook-url'];
         if (!$url) {
             $ost->logError('teams Plugin not configured', 'You need to read the Readme and configure a webhook URL before using this.');
         }
 
         // Check the subject, see if we want to filter it.
-        $regex_subject_ignore = static::$config['teams-regex-subject-ignore'];
+        $regex_subject_ignore = $config['teams-regex-subject-ignore'];
         // Filter on subject, and validate regex:
         if ($regex_subject_ignore && preg_match("/$regex_subject_ignore/i", $ticket->getSubject())) {
             $ost->logDebug('Ignored Message', 'teams notification was not sent because the subject (' . $ticket->getSubject() . ') matched regex (' . htmlspecialchars($regex_subject_ignore) . ').');
@@ -272,7 +275,7 @@ class teamsPlugin extends Plugin {
                 ]
             ]
         ];
-        if(static::$config['teams-message-display']) {
+        if($config['teams-message-display']) {
             array_push($message['sections'], ['text' => $ticket->getMessages()[0]->getBody()->getClean()]);
         }
 
