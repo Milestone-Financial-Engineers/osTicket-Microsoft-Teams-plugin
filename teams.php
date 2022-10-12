@@ -21,18 +21,19 @@ class teamsPlugin extends Plugin {
         }
         return self::$instance;
       }
-    
-    static $config;
-    static $__config;
-    
-    static function setConfig($config) {
-        static::$config = $config->getInfo();
-        static::$__config = $config;
-    }
-
-    function getConfig() {
-        return static::$__config;
-    }
+    /**
+    * static $config;
+    * static $__config;
+    * 
+    * static function setConfig($config) {
+    *     static::$config = $config->getInfo();
+    *     static::$__config = $config;
+    * }
+    * 
+    * function getConfig() {
+    *     return static::$__config;
+    * }
+    */
 
     var $config_class = "teamsPluginConfig";
 
