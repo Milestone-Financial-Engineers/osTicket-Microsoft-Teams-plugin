@@ -8,9 +8,9 @@ require_once(INCLUDE_DIR . 'class.config.php');
 require_once(INCLUDE_DIR . 'class.format.php');
 require_once('config.php');
 
-class TeamsPlugin extends Plugin {
+class teamsPlugin extends Plugin {
 
-    var $config_class = "TeamsPluginConfig";
+    var $config_class = "teamsPluginConfig";
 
     /**
      * The entrypoint of the plugin, keep short, always runs.
@@ -30,7 +30,6 @@ class TeamsPlugin extends Plugin {
         // Tasks? Signal::connect('task.created',array($this,'onTaskCreated'));
     }
 
-
     /**
      * What to do with a new Ticket?
      * 
@@ -40,7 +39,6 @@ class TeamsPlugin extends Plugin {
      */
     function onTicketCreated(Ticket $ticket) {
         global $cfg;
-								  
         if (!$cfg instanceof OsticketConfig) {
             error_log("teams plugin called too early.");
             return;
@@ -48,21 +46,12 @@ class TeamsPlugin extends Plugin {
         
         // if teams-update-types is "updatesOnly", then don't send this!
         if($this->getConfig()->get('teams-update-types') == 'updatesOnly') {return;}
-
-        // Convert any HTML in the message into text
-        $plaintext = Format::html2text($ticket->getMessages()[0]->getBody()->getClean());
-
-        // Format the messages we'll send.
-        $heading = sprintf('%s CONTROLSTART%sscp/tickets.php?id=%d|#%sCONTROLEND %s'
-                , __("New Ticket")
-                , $cfg->getUrl()
-                , $ticket->getId()
-                , $ticket->getNumber()
-                , __("created"));
-                $this->sendToTeams($ticket, $type);
+    
+        // Send to Teams
+        $this->sendToTeams($ticket, $type);
     }
 
-     /**
+    /**
      * What to do with an Updated Ticket?
      * 
      * @global OsticketConfig $cfg
@@ -70,7 +59,6 @@ class TeamsPlugin extends Plugin {
      * @return type
      */
     function onTicketUpdated(ThreadEntry $entry) {
-								  
         global $cfg;
         if (!$cfg instanceof OsticketConfig) {
             error_log("teams plugin called too early.");
@@ -97,22 +85,13 @@ class TeamsPlugin extends Plugin {
         if ($entry->getId() == $first_entry->getId()) {
             return;
         }
-        // Convert any HTML in the message into text
-        $plaintext = Format::html2text($entry->getBody()->getClean());
-
-        // Format the messages we'll send
-        $heading = sprintf('%s CONTROLSTART%sscp/tickets.php?id=%d|#%sCONTROLEND %s'
-                , __("Ticket")
-                , $cfg->getUrl()
-                , $ticket->getId()
-                , $ticket->getNumber()
-                , __("updated"));
-                $this->sendToTeams($ticket, $type, 'warning');
+        // Send to Teams
+        $this->sendToTeams($ticket, $type, 'warning');
     }
 
     /**
-     * A helper function that sends messages to teams endpoints.
-     *
+     * A helper function that sends messages to teams endpoints. 
+     * 
      * @global osTicket $ost
      * @global OsticketConfig $cfg
      * @param Ticket $ticket
@@ -121,56 +100,59 @@ class TeamsPlugin extends Plugin {
      * @param string $colour
      * @throws \Exception
      */
-    function sendToTeams(Ticket $ticket, $type, $colour = 'good') {
+    function sendToteams(Ticket $ticket, $heading, $body, $colour = 'good') {
         global $ost, $cfg;
         if (!$ost instanceof osTicket || !$cfg instanceof OsticketConfig) {
-            error_log("Teams plugin called too early.");
+            error_log("teams plugin called too early.");
             return;
         }
         $url = $this->getConfig()->get('teams-webhook-url');
         if (!$url) {
-            $ost->logError('Teams Plugin not configured', 'You need to read the Readme and configure a webhook URL before using this.');
+            $ost->logError('teams Plugin not configured', 'You need to read the Readme and configure a webhook URL before using this.');
         }
 
         // Check the subject, see if we want to filter it.
         $regex_subject_ignore = $this->getConfig()->get('teams-regex-subject-ignore');
         // Filter on subject, and validate regex:
         if ($regex_subject_ignore && preg_match("/$regex_subject_ignore/i", $ticket->getSubject())) {
-            $ost->logDebug('Ignored Message', 'Teams notification was not sent because the subject (' . $ticket->getSubject() . ') matched regex (' . htmlspecialchars($regex_subject_ignore) . ').');
+            $ost->logDebug('Ignored Message', 'teams notification was not sent because the subject (' . $ticket->getSubject() . ') matched regex (' . htmlspecialchars($regex_subject_ignore) . ').');
             return;
         } else {
             error_log("$ticket_subject didn't trigger $regex_subject_ignore");
         }
-
+        
         // Build the payload with the formatted data:
         $payload = $this->createJsonMessage($ticket, $type);
+
+        // Format the payload:
+        $data_string = utf8_encode(json_encode($payload));
 
         try {
             // Setup curl
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                    'Content-Type: application/json',
-                    'Content-Length: ' . strlen($payload))
+                'Content-Type: application/json',
+                'Content-Length: ' . strlen($data_string))
             );
 
-            // Actually send the payload to Teams:
+            // Actually send the payload to teams:
             if (curl_exec($ch) === false) {
                 throw new \Exception($url . ' - ' . curl_error($ch));
             } else {
                 $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                 if ($statusCode != '200') {
                     throw new \Exception(
-                        'Error sending to: ' . $url
-                        . ' Http code: ' . $statusCode
-                        . ' curl-error: ' . curl_errno($ch));
+                    'Error sending to: ' . $url
+                    . ' Http code: ' . $statusCode
+                    . ' curl-error: ' . curl_errno($ch));
                 }
             }
         } catch (\Exception $e) {
-            $ost->logError('Teams posting issue!', $e->getMessage(), true);
-            error_log('Error posting to Teams. ' . $e->getMessage());
+            $ost->logError('teams posting issue!', $e->getMessage(), true);
+            error_log('Error posting to teams. ' . $e->getMessage());
         } finally {
             curl_close($ch);
         }
@@ -179,26 +161,26 @@ class TeamsPlugin extends Plugin {
     /**
      * Fetches a ticket from a ThreadEntry
      *
-     * @param ThreadEntry $entry
+     * @param ThreadEntry $entry        	
      * @return Ticket
      */
     function getTicket(ThreadEntry $entry) {
         $ticket_id = Thread::objects()->filter([
-            'id' => $entry->getThreadId()
-        ])->values_flat('object_id')->first() [0];
+                    'id' => $entry->getThreadId()
+                ])->values_flat('object_id')->first() [0];
 
         // Force lookup rather than use cached data..
         // This ensures we get the full ticket, with all
-        // thread entries etc..
+        // thread entries etc.. 
         return Ticket::lookup(array(
-            'ticket_id' => $ticket_id
+                    'ticket_id' => $ticket_id
         ));
     }
 
     /**
-     * Formats text according to the
-     * formatting rules:https://docs.microsoft.com/en-us/outlook/actionable-messages/adaptive-card
-     *
+     * Formats text according to the 
+     * formatting rules:https://learn.microsoft.com/en-us/outlook/actionable-messages/send-via-connectors
+     * 
      * @param string $text
      * @return string
      */
@@ -215,7 +197,7 @@ class TeamsPlugin extends Plugin {
             'CONTROLEND'   => '>'
         ];
         // Replace the CONTROL characters, and limit text length to 500 characters.
-        return substr(str_replace(array_keys($moreformatter), array_values($moreformatter), $formatted_text), 0, 500);
+        return mb_substr(str_replace(array_keys($moreformatter), array_values($moreformatter), $formatted_text), 0, 500);
     }
 
     /**
@@ -243,12 +225,13 @@ class TeamsPlugin extends Plugin {
         return $url;
     }
 
+
     /**
      * @param $ticket
      * @param string $color
      * @param null $type
      * @return false|string
-     */
+    */
     private function createJsonMessage($ticket, $type = null, $color = 'AFAFAF')
     {
         global $cfg;
@@ -289,5 +272,6 @@ class TeamsPlugin extends Plugin {
         return json_encode($message, JSON_UNESCAPED_SLASHES);
 
     }
+
 
 }
