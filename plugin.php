@@ -2,10 +2,10 @@
 
 return array(
     'id'          => 'osticket:teams',
-    'version'     => '0.1',
+    'version'     => '0.2',
     'name'        => 'Teams notifier',
-    'author'      => 'Ivan Pavlović',
+    'author'      => 'Bryan Whiting',
     'description' => 'Notify Teams on new ticket.',
-    'url'         => 'https://github.com/ipavlovi/osTicket-Microsoft-Teams-plugin',
+    'url'         => 'https://github.com/Milestone-Financial-Engineers/osTicket-Microsoft-Teams-plugin',
     'plugin'      => 'teams.php:TeamsPlugin',
 );

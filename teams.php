@@ -16,44 +16,70 @@ class TeamsPlugin extends Plugin {
      * The entrypoint of the plugin, keep short, always runs.
      */
     function bootstrap() {
+        $updateTypes = $this->getConfig()->get('teams-update-types');
+        
         // Listen for osTicket to tell us it's made a new ticket or updated
         // an existing ticket:
-        Signal::connect('ticket.created', array($this, 'onTicketCreated'));
-        Signal::connect('threadentry.created', array($this, 'onTicketUpdated'));
+        if($updateTypes == 'both' || $updateTypes == 'newOnly' || empty($updateTypes)) {
+            Signal::connect('ticket.created', array($this, 'onTicketCreated'));
+        }
+        
+        if($updateTypes == 'both' || $updateTypes == 'updatesOnly' || empty($updateTypes)) {
+            Signal::connect('threadentry.created', array($this, 'onTicketUpdated'));
+        }
         // Tasks? Signal::connect('task.created',array($this,'onTaskCreated'));
     }
 
 
     /**
-     * @global $cfg
+     * What to do with a new Ticket?
+     * 
+     * @global OsticketConfig $cfg
      * @param Ticket $ticket
-     * @throws Exception
+     * @return type
      */
     function onTicketCreated(Ticket $ticket) {
         global $cfg;
-        $type = 'Issue created: ';
+								  
         if (!$cfg instanceof OsticketConfig) {
-            error_log("Teams plugin called too early.");
+            error_log("teams plugin called too early.");
             return;
         }
+        
+        // if teams-update-types is "updatesOnly", then don't send this!
+        if($this->getConfig()->get('teams-update-types') == 'updatesOnly') {return;}
 
-        $this->sendToTeams($ticket, $type);
+        // Convert any HTML in the message into text
+        $plaintext = Format::html2text($ticket->getMessages()[0]->getBody()->getClean());
+
+        // Format the messages we'll send.
+        $heading = sprintf('%s CONTROLSTART%sscp/tickets.php?id=%d|#%sCONTROLEND %s'
+                , __("New Ticket")
+                , $cfg->getUrl()
+                , $ticket->getId()
+                , $ticket->getNumber()
+                , __("created"));
+                $this->sendToTeams($ticket, $type);
     }
 
-    /**
+     /**
      * What to do with an Updated Ticket?
-     *
+     * 
      * @global OsticketConfig $cfg
      * @param ThreadEntry $entry
      * @return type
      */
     function onTicketUpdated(ThreadEntry $entry) {
-        $type = 'Issue Updated: ';
+								  
         global $cfg;
         if (!$cfg instanceof OsticketConfig) {
-            error_log("Slack plugin called too early.");
+            error_log("teams plugin called too early.");
             return;
         }
+        
+        // if teams-update-types is "newOnly", then don't send this!
+        if($this->getConfig()->get('teams-update-types') == 'newOnly') {return;}
+        
         if (!$entry instanceof MessageThreadEntry) {
             // this was a reply or a system entry.. not a message from a user
             return;
@@ -71,8 +97,17 @@ class TeamsPlugin extends Plugin {
         if ($entry->getId() == $first_entry->getId()) {
             return;
         }
+        // Convert any HTML in the message into text
+        $plaintext = Format::html2text($entry->getBody()->getClean());
 
-        $this->sendToTeams($ticket, $type, 'warning');
+        // Format the messages we'll send
+        $heading = sprintf('%s CONTROLSTART%sscp/tickets.php?id=%d|#%sCONTROLEND %s'
+                , __("Ticket")
+                , $cfg->getUrl()
+                , $ticket->getId()
+                , $ticket->getNumber()
+                , __("updated"));
+                $this->sendToTeams($ticket, $type, 'warning');
     }
 
     /**

@@ -20,20 +20,22 @@ class TeamsPluginConfig extends PluginConfig {
         return Plugin::translate('teams');
     }
 
-	function pre_save(&$config, &$errors) {
-			global $msg;
-			if (!$errors)
-				$msg = __('Configuration updated successfully');
-			return true;
-		}
-
+    function pre_save(&$config, &$errors) {
+        if ($config['slack-regex-subject-ignore'] && false === @preg_match("/{$config['slack-regex-subject-ignore']}/i", null)) {
+            $errors['err'] = 'Your regex was invalid, try something like "spam", it will become: "/spam/i" when we use it.';
+													
+            return FALSE;
+        }
+        return TRUE;
+    }
+					
     function getOptions() {
         list ($__, $_N) = self::translate();
 
         return array(
             'teams'                      => new SectionBreakField(array(
-                'label' => $__('Slack notifier'),
-                'hint'  => $__('Readme first: https://github.com/ipavlovi/osTicket-Microsoft-Teams-plugin')
+                'label' => $__('Teams notifier'),
+                'hint'  => $__('Readme first: https://github.com/Milestone-Financial-Engineers/osTicket-Microsoft-Teams-plugin')
             )),
             'teams-webhook-url'          => new TextboxField(array(
                 'label'         => $__('Webhook URL'),
@@ -52,6 +54,24 @@ class TeamsPluginConfig extends PluginConfig {
             ]),
             'teams-message-display' => new BooleanField([
                 'label' => $__('Display ticket message body in notification.'),
+            'teams-update-types' => new ChoiceField([
+                'label'         => $__('Update Types'),
+                'hint'          => $__('What types of updates should be sent via Teams?'),
+                'choices' => array('both' => 'New & Updated Tickets', 'updatesOnly' => 'Only Ticket Updates', 'newOnly' => 'Only New Tickets'),
+                'default' => 'both',
+                'configuration' => [
+                    'size'   => 30,
+                    'length' => 200
+                ],
+                    ]),
+            'message-template'           => new TextareaField([
+                'label'         => $__('Message Template'),
+                'hint'          => $__('The main text part of the Teams message, uses Ticket Variables, for what the user typed, use variable: %{teams_safe_message}'),
+                // "<%{url}/scp/tickets.php?id=%{ticket.id}|%{ticket.subject}>\n" // Already included as Title
+                'default'       => "%{ticket.name.full} (%{ticket.email}) in *%{ticket.dept}* _%{ticket.topic}_\n\n```%{teams_safe_message}```",
+                'configuration' => [
+                    'html' => FALSE,
+               																					  
                 'hint' => $__('Uncheck to hide messages.'),
                 'default' => TRUE
             ])
