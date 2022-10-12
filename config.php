@@ -70,10 +70,10 @@ class TeamsPluginConfig extends PluginConfig {
                 // "<%{url}/scp/tickets.php?id=%{ticket.id}|%{ticket.subject}>\n" // Already included as Title
                 'default'       => "%{ticket.name.full} (%{ticket.email}) in *%{ticket.dept}* _%{ticket.topic}_\n\n```%{teams_safe_message}```",
                 'configuration' => [
-                    'html' => FALSE,
-               																					  
-                'hint' => $__('Uncheck to hide messages.'),
-                'default' => TRUE
+                    'html' => FALSE,																				  
+                    'hint' => $__('Uncheck to hide messages.'),
+                    'default' => TRUE
+                ]
             ])
         );
     }
