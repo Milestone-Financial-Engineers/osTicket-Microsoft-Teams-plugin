@@ -8,9 +8,33 @@ require_once(INCLUDE_DIR . 'class.config.php');
 require_once(INCLUDE_DIR . 'class.format.php');
 require_once('config.php');
 
-class TeamsPlugin extends Plugin {
+class teamsPlugin extends Plugin {
 
-    var $config_class = "TeamsPluginConfig";
+
+    function getPluginInstance($id) {
+        return $this->getPlugin()->getInstance($id);
+      }
+
+    static function getInstanceStatic() {
+        if (self::$instance == null) {
+          self::$instance = new AttachmentPreviewPlugin(1);
+        }
+        return self::$instance;
+      }
+    
+    static $config;
+    static $__config;
+    
+    static function setConfig($config) {
+        static::$config = $config->getInfo();
+        static::$__config = $config;
+    }
+
+    function getConfig() {
+        return static::$__config;
+    }
+
+    var $config_class = "teamsPluginConfig";
 
     /**
      * The entrypoint of the plugin, keep short, always runs.
@@ -33,11 +57,11 @@ class TeamsPlugin extends Plugin {
         global $cfg;
         $type = 'Issue created: ';
         if (!$cfg instanceof OsticketConfig) {
-            error_log("Teams plugin called too early.");
+            error_log("teams plugin called too early.");
             return;
         }
 
-        $this->sendToTeams($ticket, $type);
+        $this->sendToteams($ticket, $type);
     }
 
     /**
@@ -72,11 +96,11 @@ class TeamsPlugin extends Plugin {
             return;
         }
 
-        $this->sendToTeams($ticket, $type, 'warning');
+        $this->sendToteams($ticket, $type, 'warning');
     }
 
     /**
-     * A helper function that sends messages to Teams endpoints.
+     * A helper function that sends messages to teams endpoints.
      *
      * @global osTicket $ost
      * @global OsticketConfig $cfg
@@ -86,22 +110,22 @@ class TeamsPlugin extends Plugin {
      * @param string $colour
      * @throws \Exception
      */
-    function sendToTeams(Ticket $ticket, $type, $colour = 'good') {
+    function sendToteams(Ticket $ticket, $type, $colour = 'good') {
         global $ost, $cfg;
         if (!$ost instanceof osTicket || !$cfg instanceof OsticketConfig) {
-            error_log("Teams plugin called too early.");
+            error_log("teams plugin called too early.");
             return;
         }
-        $url = $this->getConfig()->get('Teams-webhook-url');
+        $url = static::$config['teams-webhook-url'];
         if (!$url) {
-            $ost->logError('Teams Plugin not configured', 'You need to read the Readme and configure a webhook URL before using this.');
+            $ost->logError('teams Plugin not configured', 'You need to read the Readme and configure a webhook URL before using this.');
         }
 
         // Check the subject, see if we want to filter it.
-        $regex_subject_ignore = $this->getConfig()->get('Teams-regex-subject-ignore');
+        $regex_subject_ignore = static::$config['teams-regex-subject-ignore'];
         // Filter on subject, and validate regex:
         if ($regex_subject_ignore && preg_match("/$regex_subject_ignore/i", $ticket->getSubject())) {
-            $ost->logDebug('Ignored Message', 'Teams notification was not sent because the subject (' . $ticket->getSubject() . ') matched regex (' . htmlspecialchars($regex_subject_ignore) . ').');
+            $ost->logDebug('Ignored Message', 'teams notification was not sent because the subject (' . $ticket->getSubject() . ') matched regex (' . htmlspecialchars($regex_subject_ignore) . ').');
             return;
         } else {
             error_log("$ticket_subject didn't trigger $regex_subject_ignore");
@@ -121,7 +145,7 @@ class TeamsPlugin extends Plugin {
                     'Content-Length: ' . strlen($payload))
             );
 
-            // Actually send the payload to Teams:
+            // Actually send the payload to teams:
             if (curl_exec($ch) === false) {
                 throw new \Exception($url . ' - ' . curl_error($ch));
             } else {
@@ -134,8 +158,8 @@ class TeamsPlugin extends Plugin {
                 }
             }
         } catch (\Exception $e) {
-            $ost->logError('Teams posting issue!', $e->getMessage(), true);
-            error_log('Error posting to Teams. ' . $e->getMessage());
+            $ost->logError('teams posting issue!', $e->getMessage(), true);
+            error_log('Error posting to teams. ' . $e->getMessage());
         } finally {
             curl_close($ch);
         }
@@ -247,7 +271,7 @@ class TeamsPlugin extends Plugin {
                 ]
             ]
         ];
-        if($this->getConfig()->get('Teams-message-display')) {
+        if(static::$config['teams-message-display'];) {
             array_push($message['sections'], ['text' => $ticket->getMessages()[0]->getBody()->getClean()]);
         }
 

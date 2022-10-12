@@ -2,7 +2,7 @@
 
 require_once INCLUDE_DIR . 'class.plugin.php';
 
-class TeamsPluginConfig extends PluginConfig {
+class teamsPluginConfig extends PluginConfig {
 
     // Provide compatibility function for versions of osTicket prior to
     // translation support (v1.9.4)
@@ -17,11 +17,11 @@ class TeamsPluginConfig extends PluginConfig {
                 }
             );
         }
-        return Plugin::translate('Teams');
+        return Plugin::translate('teams');
     }
 
     function pre_save(&$config, &$errors) {
-        if ($config['Teams-regex-subject-ignore'] && false === @preg_match("/{$config['Teams-regex-subject-ignore']}/i", null)) {
+        if ($config['teams-regex-subject-ignore'] && false === @preg_match("/{$config['teams-regex-subject-ignore']}/i", null)) {
             $errors['err'] = 'Your regex was invalid, try something like "spam", it will become: "/spam/i" when we use it.';
             return FALSE;
         }
@@ -32,18 +32,18 @@ class TeamsPluginConfig extends PluginConfig {
         list ($__, $_N) = self::translate();
 
         return array(
-            'Teams'                      => new SectionBreakField(array(
-                'label' => $__('Teams notifier'),
-                'hint'  => $__('Readme first: https://github.com/Milestone-Financial-Engineers/osTicket-Microsoft-Teams-plugin')
+            'teams'                      => new SectionBreakField(array(
+                'label' => $__('teams notifier'),
+                'hint'  => $__('Readme first: https://github.com/Milestone-Financial-Engineers/osTicket-Microsoft-teams-plugin')
                     )),
-            'Teams-webhook-url'          => new TextboxField(array(
+            'teams-webhook-url'          => new TextboxField(array(
                 'label'         => $__('Webhook URL'),
                 'configuration' => array(
                     'size'   => 100,
                     'length' => 700
                 ),
                     )),
-            'Teams-regex-subject-ignore' => new TextboxField([
+            'teams-regex-subject-ignore' => new TextboxField([
                 'label'         => $__('Ignore when subject equals regex'),
                 'hint'          => $__('Auto delimited, always case-insensitive'),
                 'configuration' => [
@@ -51,7 +51,7 @@ class TeamsPluginConfig extends PluginConfig {
                     'length' => 200
                 ],
                     ]),
-            'Teams-message-display' => new BooleanField([
+            'teams-message-display' => new BooleanField([
                 'label' => $__('Display ticket message body in notification.'),
                 'hint' => $__('Uncheck to hide messages.'),
                 'default' => TRUE
